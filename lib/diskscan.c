@@ -696,7 +696,7 @@ static enum conclusion conclusion_calc(disk_t *disk)
 	return CONCLUSION_PASSED;
 }
 
-int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size)
+int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size, uint64_t start_sector, uint64_t end_sector)
 {
 	disk->run = 1;
 	void *data = allocate_buffer(data_size);
@@ -731,7 +731,8 @@ int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size)
 	}
 
 	uint64_t offset;
-	const uint64_t disk_size_bytes = disk->num_bytes;
+	uint64_t start_offset = start_sector * disk->sector_size;
+	const uint64_t end_offset = end_sector ? end_sector * disk->sector_size : disk->num_bytes;
 	const uint64_t latency_stride = calc_latency_stride(disk);
 	VVERBOSE("latency stride is %"PRIu64, latency_stride);
 
@@ -749,8 +750,8 @@ int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size)
 	}
 
 	verbose_extra_newline = 1;
-	for (offset = 0; disk->run && offset < disk_size_bytes; offset += latency_stride * disk->sector_size) {
-		VERBOSE("Scanning stride starting at %"PRIu64" done %"PRIu64"%%", offset, offset*100/disk_size_bytes);
+	for (offset = start_offset; disk->run && offset < end_offset; offset += latency_stride * disk->sector_size) {
+		VERBOSE("Scanning stride starting at %"PRIu64" done %"PRIu64"%%", offset, offset*100/end_offset);
 		progress_calc(disk, &state, 0);
 		latency_bucket_prepare(disk, &state, offset);
 		if (!disk_scan_latency_stride(disk, &state, offset, data_size, scan_order))

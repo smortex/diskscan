@@ -48,6 +48,8 @@ struct options_t {
 	char *data_log_name;
 	char *data_log_raw_name;
 	disk_mount_e allowed_mount;
+	uint64_t start_sector;
+	uint64_t end_sector;
 };
 
 static void print_header(void)
@@ -68,6 +70,8 @@ static int usage(void) {
 	printf("    -e, --size <size>    - Scan size (default to 64K, must be multiple of 512)\n");
 	printf("    -o, --output <file>  - Output file (json)\n");
 	printf("    -r, --raw-log <file> - Raw log of all scan results (json)\n");
+	printf("    -S, --start-sector <sector> - Start scan at sector\n");
+	printf("    -E, --end-sector <sector>   - Stop scan at sector\n");
 	printf("    --force-mounted      - Allow checking a read-only mounted disk\n");
 	printf("    --force-mounted-rw   - Allow checking a read-write mounted disk\n");
 	printf("\n");
@@ -219,12 +223,14 @@ static int parse_args(int argc, char **argv, options_t *opts)
 			{"size",    required_argument, 0,  'e'},
 			{"raw-log", required_argument, 0,  'r'},
 			{"output",  required_argument, 0,  'o'},
+			{"start-sector", required_argument, 0, 'S'},
+			{"end-sector",   required_argument, 0, 'E'},
 			{"force-mounted", no_argument, &allowed_mount, DISK_MOUNTED_RO},
 			{"force-mounted-rw", no_argument, &allowed_mount, DISK_MOUNTED_RW},
 			{0,         0,                 0,  0}
 		};
 
-		c = getopt_long(argc, argv, "vfs:e:o:r:", long_options, &option_index);
+		c = getopt_long(argc, argv, "vfs:e:o:r:S:E:", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -254,6 +260,12 @@ static int parse_args(int argc, char **argv, options_t *opts)
 				break;
 			case 'r':
 				opts->data_log_raw_name = optarg;
+				break;
+			case 'S':
+				opts->start_sector = atoll(optarg);
+				break;
+			case 'E':
+				opts->end_sector = atoll(optarg);
 				break;
 
 			default:
@@ -339,7 +351,7 @@ int diskscan_cli(int argc, char **argv)
 	if (opts.data_log_name)
 		data_log_start(&disk.data_log, opts.data_log_name, &disk);
 	ret = 0;
-	if (disk_scan(&disk, opts.mode, opts.scan_size))
+	if (disk_scan(&disk, opts.mode, opts.scan_size, opts.start_sector, opts.end_sector))
 		ret = 1;
 	if (opts.data_log_raw_name)
 		data_log_raw_end(&disk.data_raw);

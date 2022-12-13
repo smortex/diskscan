@@ -88,7 +88,7 @@ typedef struct disk_t {
 } disk_t;
 
 int disk_open(disk_t *disk, const char *path, int fix, unsigned latency_graph_len, disk_mount_e allowed_mount);
-int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size);
+int disk_scan(disk_t *disk, enum scan_mode mode, unsigned data_size, uint64_t start_sector, uint64_t end_sector);
 int disk_close(disk_t *disk);
 void disk_scan_stop(disk_t *disk);
 
